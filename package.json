@@ -1,0 +1,50 @@
+{
+  "name": "dsh-im-qq",
+  "version": "0.1.0",
+  "description": "QQ 官方机器人接入插件：让用户通过 QQ（私聊 / 群聊 / 频道 @）直接与 harness 完整 agent 对话（工具 / 记忆 / 子代理 / 文件系统 / 安全护栏，与 Web UI 同源）",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "im",
+    "qq",
+    "qqbot",
+    "harness-desktop",
+    "cua",
+    "agent"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/",
+    "core/",
+    "platform/",
+    "cordis.patch.yml",
+    "README.md",
+    "VERIFICATION.md",
+    "qq-bot-plugin-design.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check index.js && node --check lib/*.js && node --check core/*.js && node --check platform/*.js && node --check platform/transport/*.js && bash -n install.sh && bash -n uninstall.sh"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.0.0"
+  }
+}

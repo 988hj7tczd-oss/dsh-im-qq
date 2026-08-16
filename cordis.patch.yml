@@ -1,0 +1,37 @@
+# dsh-im-qq bundle patch：把 QQ Bot 接入插件插入 profile。
+#
+# 作为 dsh.bundle.patch 被 dsh 加载器消费。insert 引用本包（dsh-im-qq），
+# 加载器会从 profile 的 node_modules 解析它并加载为 Cordis 插件。
+#
+# ⚠️ 安装前必读（qq-bot-plugin-design.md §3.4 前置条件）：
+#   1. q.qq.com 创建的机器人类型必须是「公域」，否则群消息永久报错 11255
+#   2. 在 q.qq.com → 开发设置 → 测试人员管理 添加你自己的 QQ 号（沙箱外人员发消息 11255）
+#   3. openid / group_openid 是平台按 bot 哈希的，无法提前预知——
+#      白名单建议先用 '*'（显式放行），上线前从真实收到的消息里抄 openid 收紧
+- insert:
+    - id: dsh-im-qq
+      name: dsh-im-qq
+      config:
+        id: ''                     # 必填：q.qq.com 的 AppID（必须加引号，防 YAML 数字解析）
+        secretEnv: 'DSH_QQ_SECRET' # 推荐：从环境变量读 AppSecret（配置只存引用）
+        # secret: ''               # 二选一：明文 secret（与 secretEnv 互斥）
+        sandbox: true              # 先沙箱验证，稳定后改 false 切正式环境
+        transport: 'websocket'     # websocket（当前）| webhook（P5 预留）
+        provider: 'deepseek-official'
+        model: 'deepseek-v4-flash'
+        agentPreset: 'standard'    # standard / code / minimal / cordis / 自定义
+        cwd: '~/qq-workspace'      # 独立工作区（自动创建），多会话默认按 chatKey 分子目录
+        workspaceIsolation: true
+        allowFrom: ['*']           # 私聊白名单：空=全拒（fail-closed），'*'=显式放行
+        groupAllowFrom: ['*']      # 群/频道白名单：同上
+        markdown: false            # msg_type 2，需平台开通 markdown 权限
+        typing: true               # C2C 输入中指示（P4 实测确认接口后实现）
+        streaming: false           # C2C 流式回复（P4 实测确认接口后实现）
+        deliverWindowMs: 900       # 轮内回复合并窗口
+        deliverMaxWaitMs: 6000     # 合并最大等待
+        textChunkLimit: 4000       # 单条静态回复上限（超长分段）
+        replyPassiveLimit: 4       # 每条入站消息被动回复上限（超限自动转主动）
+        approval: true             # 审批桥：QQ 内联按钮（✅ 一次 / ⭐ 始终 / ❌ 拒绝）
+        approvalTimeoutMs: 300000
+        slashCommands: true        # /help /ping /me /new /approve /always /revoke
+        debug: false
