@@ -103,6 +103,7 @@
 ## 五、修订记录
 
 - 2026-08-16 v0.1：P0–P4 核心代码完成（WS transport / router / qqapi / session-map / outbound / approval / acl / slash / install 脚本 / 文档），API 全部按 rc.6 源码实锤。
+- 2026-08-16 v0.1.1：脱敏联调记录中的 AppID / openid（隐私清理），仓库历史重写。
 - 2026-08-16 v0.2（联调期修复）：真实环境联调通过（私聊 C2C 全链路）。修复清单：
   - 致命：`session/event` 负载在 `event.data`（outbound 读顶层字段 → 回复静默丢失）
   - 致命：C2C/群 `msg_type` 应为 `0`（写死 1 → 40034127）

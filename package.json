@@ -1,6 +1,6 @@
 {
   "name": "dsh-im-qq",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "QQ 官方机器人接入插件：让用户通过 QQ（私聊 / 群聊 / 频道 @）直接与 harness 完整 agent 对话（工具 / 记忆 / 子代理 / 文件系统 / 安全护栏，与 Web UI 同源）",
   "type": "module",
   "main": "index.js",
