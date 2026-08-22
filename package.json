@@ -5,6 +5,14 @@
   "type": "module",
   "main": "index.js",
   "license": "MIT",
+  "homepage": "https://github.com/988hj7tczd-oss/dsh-im-qq",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/988hj7tczd-oss/dsh-im-qq.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "dsh",
     "im",
@@ -40,7 +48,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "check": "node --check index.js && node --check lib/*.js && node --check core/*.js && node --check platform/*.js && node --check platform/transport/*.js && bash -n install.sh && bash -n uninstall.sh"
+    "check": "node --check index.js && node --check lib/*.js && node --check core/*.js && node --check platform/*.js && node --check platform/transport/*.js && bash -n install.sh && bash -n uninstall.sh",
+    "test": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
