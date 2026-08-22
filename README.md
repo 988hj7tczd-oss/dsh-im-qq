@@ -1,5 +1,7 @@
 # dsh-im-qq
 
+![CI](https://github.com/988hj7tczd-oss/dsh-im-qq/actions/workflows/smoke.yml/badge.svg)
+
 让 **DeepSeek Harness** 接入 **QQ 官方机器人**（q.qq.com）——通过 QQ（私聊 / 群聊 / 频道 @）直接与 harness 的完整 agent 对话：工具调用、记忆、子代理、文件系统与安全护栏，**与 Web UI 完全同源**。
 
 > 设计文档：`qq-bot-plugin-design.md`（v0.3，API 签名已按 rc.6 源码实锤），完整设计见 GitHub 仓库
@@ -138,6 +140,15 @@ qqapi.js 发回 QQ（三处 POST 均带 msg_seq 防重放；50015014 频控指�
 - **WS 下线风险**：官方长期方向是 Webhook（需公网 HTTPS + IP 白名单）。当前 WS 可用（2026-08 核实），架构已抽象双模式，官方强制时仅需实现 `platform/transport/webhook.js`（P5）。
 - **图片/流式/typing**：接口存在性需真实环境实测（P4）；配置项已留，代码未实现调用。
 - **主动消息频控**：QQ 对主动消息有限频，超限会收到 50015014，插件已做指数退避重试，但高频主动推送仍可能被平台限制。
+
+## 测试
+
+```bash
+npm ci
+npm test    # node scripts/smoke-test.mjs
+```
+
+冒烟测试 mock 整个 dsh 运行时与 QQ 平台（无真实凭据/网络），覆盖事件路由、acl（含群/频道白名单与频控）、文本清洗与分段（含 emoji 无损）、QQ API URL/seq、会话生命周期、回复合并与兜底、审批桥与斜杠命令。CI（`.github/workflows/smoke.yml`）在每次 push/PR 自动运行。
 
 ## License
 
