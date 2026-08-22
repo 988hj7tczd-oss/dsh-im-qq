@@ -2,9 +2,9 @@
  * 冒烟测试（无真实平台/dsh 运行时）：mock dsh 服务，验证核心逻辑。
  *
  * 运行：node scripts/smoke-test.mjs
- * 覆盖：router 事件路由 / acl fail-closed / util 清洗分段 /
- *       qqapi URL 与 seq / session-map 生命周期 / outbound 合并与兜底 /
- *       approval 按钮回调解析
+ * 覆盖：router 事件路由 / acl fail-closed（含群/频道白名单与频控）/
+ *       util 清洗分段（含 emoji 代理对无损）/ qqapi URL 与 seq /
+ *       session-map 生命周期 / outbound 合并与兜底 / approval 按钮回调解析
  */
 import assert from 'node:assert'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -79,6 +79,21 @@ console.log('== 2. acl fail-closed ==')
   ok('精确不匹配拒绝', exact.check({ kind: 'user', id: 'OTHER' }, 'qq:user:OTHER').ok === false)
 }
 
+console.log('== 2b. acl 群/频道白名单与频控（补充） ==')
+{
+  const g = new Acl({ allowFrom: [], groupAllowFrom: ['G1'], logger })
+  ok('群白名单匹配放行', g.check({ kind: 'group', id: 'G1' }, 'qq:group:G1').ok === true)
+  ok('频道复用群白名单', g.check({ kind: 'channel', id: 'G1' }, 'qq:channel:G1:C1').ok === true)
+  ok('群白名单不匹配拒绝', g.check({ kind: 'group', id: 'G2' }, 'qq:group:G2').ok === false)
+  ok('用户不走群白名单（fail-closed）', g.check({ kind: 'user', id: 'G1' }, 'qq:user:G1').ok === false)
+
+  // 频控：同一 chatKey 60s 滑动窗口最多 30 条
+  const rate = new Acl({ allowFrom: ['*'], groupAllowFrom: ['*'], logger })
+  for (let i = 0; i < 30; i++) ok(`频控放行第 ${i + 1} 条`, rate.check({ kind: 'user', id: 'R' }, 'qq:user:R').ok === true)
+  ok('第 31 条超限拒绝', rate.check({ kind: 'user', id: 'R' }, 'qq:user:R').ok === false)
+  ok('其他 chatKey 不受影响', rate.check({ kind: 'user', id: 'R2' }, 'qq:user:R2').ok === true)
+}
+
 console.log('== 3. util 清洗/分段 ==')
 {
   const cleaned = stripInternalTags('好的<think>内部推理</think>，马上办<system-reminder>system</system-reminder>')
@@ -89,6 +104,33 @@ console.log('== 3. util 清洗/分段 ==')
   const cn = chunkText('中'.repeat(5000), 4000)
   ok('中文按字节分段（每段≤4000 字节且不丢字）', cn.length === 4 && cn.every((c) => Buffer.byteLength(c, 'utf8') <= 4000) && cn.join('') === '中'.repeat(5000))
   ok('textFromBlocks 提取 text', textFromBlocks([{ type: 'text', text: 'A' }, { type: 'tool-result', content: [] }]) === 'A')
+}
+
+console.log('== 3b. util 边界与 emoji 无损（补充） ==')
+{
+  ok('空/null 输入 → 空串', stripInternalTags('') === '' && stripInternalTags(null) === '')
+  ok('文本去首尾空白', stripInternalTags('  你好  ') === '你好')
+  ok('多个内部标签剥离不粘连', stripInternalTags('ab<system-reminder>y</system-reminder>c') === 'abc')
+  ok('连续空行折叠为双换行', stripInternalTags('a\n\n\n\nb') === 'a\n\nb')
+
+  ok('chunkText 空串 → []', chunkText('', 4000).length === 0)
+  ok('chunkText limit<=0 回退 4000', chunkText('a'.repeat(5000), 0).every((c) => Buffer.byteLength(c, 'utf8') <= 4000))
+  ok('短文本单块返回', chunkText('hello', 4000).length === 1)
+  const nl = chunkText('x'.repeat(2500) + '\n' + 'y'.repeat(5000), 4000)
+  ok('预算过半在换行处断开', nl[0] === 'x'.repeat(2500))
+  ok('全部段 ≤4000 字节', nl.every((c) => Buffer.byteLength(c, 'utf8') <= 4000))
+
+  // 🔴 回归：emoji 是 UTF-16 代理对，按字节切分不得切断代理对（每段都必须是合法文本）
+  const emoji = '😀'.repeat(2000)
+  const emojiChunks = chunkText(emoji, 4000)
+  ok('emoji 分段每段≤4000 字节', emojiChunks.every((c) => Buffer.byteLength(c, 'utf8') <= 4000))
+  ok('emoji 分段无孤立代理项', emojiChunks.every((c) =>
+    !(c.charCodeAt(0) >= 0xDC00 && c.charCodeAt(0) <= 0xDFFF) &&
+    !(c.charCodeAt(c.length - 1) >= 0xD800 && c.charCodeAt(c.length - 1) <= 0xDBFF)))
+  ok('emoji 重拼无损', emojiChunks.join('') === emoji)
+
+  ok('textFromBlocks 过滤非 text 块', textFromBlocks([{ type: 'text', text: 'A' }, { type: 'tool-result', content: [] }, { type: 'text', text: 'B' }]) === 'A\nB')
+  ok('textFromBlocks 非数组 → 空串', textFromBlocks(null) === '' && textFromBlocks('x') === '')
 }
 
 console.log('== 4. qqapi URL / seq（无网络） ==')
