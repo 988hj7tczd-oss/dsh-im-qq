@@ -2,6 +2,12 @@
 
 所有重要变更记录（格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)）。
 
+## [Unreleased]
+
+### Fixed
+
+- `@deepseek-ai/dsh-llm`、`@deepseek-ai/dsh-session` 从 `dependencies` 移到 `peerDependencies`（`>=0.1.0-rc.6`）。这两个包由 DSH 宿主提供；写成普通依赖时，DeepSeek Harness Desktop（profile 为 `nodeLinker: hoisted`）会把 0.1.x 旧版装到 profile 顶层，宿主核心插件 `llm`、`session` 改从旧版加载并因不兼容被禁用，桌面版无法启动。
+
 ## [0.1.1] - 2026-08-16
 
 ### Fixed
